@@ -26,6 +26,7 @@ int main(int argc, char *argv[])
     switch(style) //how to split up the game
     {
         case 1:
+            fseek(fd1,0x92b0,SEEK_SET);
             split(fd1, 257, 1, 1);
             break;
 
@@ -45,26 +46,25 @@ int main(int argc, char *argv[])
             rewind(fd1);
             printf("Could not determine game, "
                          "assuming extracted level data block.\n");
-            split(fd1, 0, 1);
+            split(fd1, -1, 1,1);
     }
     fclose(fd1);
 }
 
 void split(FILE *fd1, int puzzles, int start, int grids)
 {
-    grids*=32;
-    char buf[grids], filename[12];
+    char buf[grids*32], filename[12];
     FILE *fd2;
     puzzles+=start;
     for(int i=start; i!=puzzles; i++)
     {
-        if(fread(buf, 1, grids, fd1) < 30)
+        if(fread(buf, 32, grids, fd1) < 1)
             return;
         sprintf(filename, "splits/%d", i);
         fd2 = fopen(filename,"w" );
-        fwrite(buf, 1, 128, fd2);
+        fwrite(buf, 32, grids, fd2);
         fclose(fd2);
-        memset(buf, 0, 128);
+        memset(buf, 0, grids*32);
         memset(filename, 0, 12);
     }
 }
