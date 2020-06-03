@@ -1,7 +1,12 @@
+/* splitter.c (c) 2020 Moshe Piekarski     *
+* tool to split level data from Nintendo   *
+* picross games into individual puzzles    */
+
+
 #include "stdio.h"
 #include "string.h"
 
-void split15(FILE *fd1, int puzzles, int start);
+void split(FILE *fd1, int puzzles, int start, int grids);
 
 int main(int argc, char *argv[])
 {
@@ -21,30 +26,39 @@ int main(int argc, char *argv[])
     switch(style) //how to split up the game
     {
         case 1:
-            fseek(fd1,0x92b0,SEEK_SET);
-            split15(fd1, 257, 1);
+            split(fd1, 257, 1, 1);
             break;
 
         case 2:
-            printf("This game not yet supported.\n");
+            fseek(fd1,0x1fb88,SEEK_SET);
+            split(fd1, 10, 1, 1);
+            fseek(fd1,0x1c000,SEEK_SET);
+            split(fd1, 100, 11, 4);
+            split(fd1, 1, 111, 16);
+            fseek(fd1,0x54000,SEEK_SET);
+            split(fd1, 100, 112, 4);
+            split(fd1, 1, 212, 16);
+            /*Can't find the quick picross puzzles*/
             break;
 
-        default: // default to chunking the entire file into standard 15x15 size (good for extracted data)
+        default: // chunk the whole file to 15x15 (good for extracted data)
             rewind(fd1);
-            printf("Could not determine game, assuming extracted level data block.\n");
-            split15(fd1, 0, 1);
+            printf("Could not determine game, "
+                         "assuming extracted level data block.\n");
+            split(fd1, 0, 1);
     }
     fclose(fd1);
 }
 
-void split15(FILE *fd1, int puzzles, int start)
+void split(FILE *fd1, int puzzles, int start, int grids)
 {
-    char buf[128], filename[12];
+    grids*=32;
+    char buf[grids], filename[12];
     FILE *fd2;
     puzzles+=start;
     for(int i=start; i!=puzzles; i++)
     {
-        if(fread(buf, 1, 32, fd1) < 30)
+        if(fread(buf, 1, grids, fd1) < 30)
             return;
         sprintf(filename, "splits/%d", i);
         fd2 = fopen(filename,"w" );
